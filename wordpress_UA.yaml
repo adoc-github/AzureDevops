@@ -1,31 +1,69 @@
-#echo "****************************************************************"
-#echo "Installing Wordpress"
-#echo "****************************************************************"
-#if ls $ARTIFACTS_PATH/wordpress*.tar.gz 1> /dev/null 2>&1; then
-#    cp $(find $ARTIFACTS_PATH -name 'wordpress*.tar.gz') ./wordpress.tar.gz >/dev/null
-#else
-#    wget -c http://wordpress.org/latest.tar.gz -O wordpress.tar.gz 
-#fi
-#tar -xzvf wordpress.tar.gz >/dev/null
-#rsync -av wordpress/* /var/www/html/ >/dev/null
-#chown -R www-data:www-data /var/www/html/ >/dev/null
-#chmod -R 755 /var/www/html/ >/dev/null
-#rm /var/www/html/index.html
-
+#
+#   This application file defines how to deploy and
+#   configure a Wordpress application
+#
+---
 spec_version: 1
-kind: blueprint
+kind: application
 
-metadata:
-  description: ADOC Under Armor
+# These inputs are used by the initialization script to
+# configure the connectivity to the database
+# In the script we update the connectivity details which
+# are located in /var/www/html/wp-config.php
+inputs:
+  - DB_USER
+  - DB_PASS
+  - DB_NAME
+  - VM_Type
+  - AWS_Instance_Type
+infrastructure:
+  # Specify the compute requirement for this app
+  # if we don't specify anything the default will be used
+  compute:
+    spec:
+      aws:
+        instance_type: $AWS_Instance_Type
+      azure:
+        vm_size: $VM_Type
 
-clouds:
-  - aws: ap-northeast-1
+  # Port 80 will be opened externally to receive web requests
+  connectivity:
+    external:
+      - port_info:
+          port: 80
 
-# These are the blueprint parameters and their default values.
-# The values can be changed when creating a sandbox based on this
-# blueprint.
+# This is a clean Ubuntu server image that will be
+# used to create a new EC2 instance in the defined AWS region
+source:
+  os_type: linux
+  image:
+    ami:
+      - id: ami-06fd78dc2f0b69910
+        region: eu-west-1
+        username: ubuntu
+      - id: ami-0ef85cf6e604e5650
+        region: ap-northeast-1
+        username: ubuntu
+    azure_image:
+      - urn: Canonical:UbuntuServer:18.04-LTS:latest
+        username: adminuser
+    docker_image:
+      - tag: 18.04
+        name: ubuntu
 
-artifacts:
-#  - wordpress: wordpress-5.3.4.tar.gz
-#  - wordpress: wordpress-5.4.2.tar.gz
-#  - wordpress: wordpress-5.5.1.tar.gz
+configuration:
+  # The initialization script is intended to install
+  # app prerequisite and initialize the OS
+  # This script installs wordpress on a clean Ubuntu OS.
+
+initialization:
+    script: wordpress_ver5.5.1_for_UnderArmor.sh
+
+# This command restarts the Apache server after the initialization completes
+  start:
+    command: >
+      systemctl restart apache2.service
+  # To validate the installation, we wait to see that the ports are available
+  healthcheck:
+    wait_for_ports: ALL
+    timeout: 180
