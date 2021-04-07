@@ -63,6 +63,11 @@ initialization:
   start:
     command: >
       systemctl restart apache2.service
+      
+      
+      
+      
+      
   # To validate the installation, we wait to see that the ports are available
   healthcheck:
     wait_for_ports: ALL
