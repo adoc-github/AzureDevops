@@ -26,8 +26,8 @@ infrastructure:
     spec:
       aws:
         instance_type: $AWS_Instance_Type
-  #    azure:
-  #      vm_size: $VM_Type
+      azure:
+        vm_size: $VM_Type
 
   # Port 80 will be opened externally to receive web requests
   connectivity:
