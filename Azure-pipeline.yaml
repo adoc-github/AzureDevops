@@ -5,6 +5,7 @@
 
 trigger:
 - main
+- fake
 
 pool:
   vmImage: 'ubuntu-latest'
